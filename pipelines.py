@@ -1,10 +1,4 @@
-# -*- coding: utf-8 -*-
-
-# Define your item pipelines here
 #
-# Don't forget to add your pipeline to the ITEM_PIPELINES setting
-# See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
-
 import scrapy
 from scrapy import signals
 from scrapy.exporters import CsvItemExporter
@@ -28,8 +22,8 @@ class tipologiaPipeline(object):
         file = open('%s_items.csv' % spider.name, 'w+b')
         self.files[spider] = file
         self.exporter = CsvItemExporter(file)
-        self.exporter.fields_to_export = ['titulo', 'modelo', 'marca', 'tecnologia', 'tipo', 'precio', 'condicion', 'envio', 'ubicacion','opiniones',
-        				'vendedor_url', 'tipo_vendedor', 'ventas_vendedor', 'image_name', 'image_urls']
+        self.exporter.fields_to_export = ['titulo', 'modelo', 'marca', 'tipoPantalla', 'precio', 'condicion', 'envio','opiniones',
+        				'vendedor_url', 'tipo_vendedor', 'image_name', 'image_urls']
         self.exporter.start_exporting()
 
     def spider_closed(self, spider):

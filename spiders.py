@@ -1,38 +1,34 @@
-# import sys
-# reload(sys)
-# sys.setdefaultencoding('utf8')
-
-import scrapy
+import scrapy #se cargan todas las librerias a usar en el metodo
 from scrapy.spider import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
 from scrapy.exceptions import CloseSpider
 from tipologia.items import tipologiaItem
 
 class tipologiaSpider(CrawlSpider):
-	name = 'tipologia'
-	item_count = 0
-	allowed_domain = ['www.mercadolibre.com.mx']
-	start_urls = ['http://listado.mercadolibre.com.mx/impresoras#D[A:impresoras,L:1]']
+	name = 'tipologia' #este es el nombre del metodo que sera usado cuando se invoque la clase al momento de ejecutar el crawl scrapy 
+	item_count = 0 #controla la cantidad de veces que ingresara a buscar productos, en este esta variable la usamos para inicializar
+	allowed_domain = ['www.mercadolibre.com.mx'] #dominio el cual sera usado, es decir solamente va permitir informacion obtenida de este dominio #en la parte inferior sera controlada y en este ejercicio se uso un numero de 10
+	start_urls = ['https://laptops.mercadolibre.com.mx/laptops/hp/notebook']
 
 	rules = {
-		# Para cada item
-		Rule(LinkExtractor(allow = (), restrict_xpaths = ('//li[@class="pagination__next"]/a'))),
+		# aca se aplican dos reglas que va tener este proceso la primer regla indica y controla la paginacion, es decir buscara el boton siguiente una vez terminar con los productos de la primera pagina y con esta regla buscara el boton siguiente para seguir con la proxima pagna que contendran
+		Rule(LinkExtractor(allow = (), restrict_xpaths = ('//li[@class="andes-pagination__button andes-pagination__button--next"]/a'))),
 		Rule(LinkExtractor(allow =(), restrict_xpaths = ('//h2[contains(@class,"item__title")]/a')),
 							callback = 'parse_item', follow = False)
 	}
 
 	def parse_item(self, response):
 		ml_item = tipologiaItem()
-		#info de producto
+		#los productos que se encuentran indicados en la clase items.py, deben indicarse aca con su respectivo xpath el cual
+        #funcionara indicando exactamente donde esta la informacion que necesitamos para cada una de las variables.
+        #se usa la opcion llamada normalize-space ya que en esta pagina los textos contienen demasiados espacios.
 		ml_item['titulo'] = response.xpath('normalize-space(//h1[@class="item-title__primary "]/text())').extract_first()
-		ml_item['modelo'] = response.xpath('normalize-space(/html/body/main/div/div/div[1]/div[1]/section[1]/div/section[1]/ul/li[1]/span)').extract()
-		ml_item['marca'] = response.xpath('normalize-space(/html/body/main/div/div/div[1]/div[1]/section[1]/div/section[1]/ul/li[2]/span)').extract()
-		ml_item['tecnologia'] = response.xpath('normalize-space(/html/body/main/div/div/div[1]/div[1]/section[1]/div/section[2]/ul/li[1]/span)').extract()
-		ml_item['tipo'] = response.xpath('normalize-space(/html/body/main/div/div/div[1]/div[1]/section[1]/div/section[2]/ul/li[2]/span)').extract()
+		ml_item['modelo'] = response.xpath('normalize-space(//div/div[1]/div[1]/section[3]/div/section/ul/li[3]/span)').extract()
+		ml_item['marca'] = response.xpath('normalize-space(//div/div[1]/div[1]/section[3]/div/section/ul/li[1]/span)').extract()
+		ml_item['tipoPantalla'] = response.xpath('normalize-space(/html/body/main/div/div/div[1]/div[1]/section[1]/div/section[2]/ul/li[1]/span)').extract()
 		ml_item['precio'] = response.xpath('normalize-space(//span[@class="price-tag-fraction"]/text())').extract()
 		ml_item['condicion'] = response.xpath('normalize-space(//div[@class="item-conditions"]/text())').extract()
 		ml_item['envio'] = response.xpath('normalize-space(//p[contains(@class, "shipping-method-title")]/text())').extract()
-		ml_item['ubicacion'] = response.xpath('normalize-space(//p[contains(@class, "card-description")])').extract()
 		ml_item['opiniones'] = response.xpath('normalize-space(//span[@class="review-summary-average"]/text())').extract()
 		#imagenes del producto
 		ml_item['image_urls'] = response.xpath('//figure[contains(@class, "gallery-image-container")]/a/img/@src').extract()
@@ -40,8 +36,9 @@ class tipologiaSpider(CrawlSpider):
 		#info de la tienda o vendedor
 		ml_item['vendedor_url'] = response.xpath('//*[contains(@class, "reputation-view-more")]/@href').extract()
 		ml_item['tipo_vendedor'] = response.xpath('normalize-space(//p[contains(@class, "power-seller")]/text())').extract()
-		ml_item['ventas_vendedor'] = response.xpath('normalize-space(//div[@class="feedback-title"]/text())').extract()
 		self.item_count += 1
-		if self.item_count > 5:
+		if self.item_count > 10:
 			raise CloseSpider('item_exceeded')
 		yield ml_item
+        #la condicion indicada anteriormente que hace las veces de contador para seguir con la siguiente pagina y terminar el raspado
+        #en este caso sera cuando obtenga mas de 10 productos
